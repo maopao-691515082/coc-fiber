@@ -22,6 +22,7 @@ static void exit_with_err(const std::string &err)
 
 static void dispatch_client(int conn_fd)
 {
+    log("new client");
     for (;;)
     {
         char buf[1024];
@@ -46,7 +47,7 @@ static void dispatch_client(int conn_fd)
 
 static void start_svr()
 {
-    int listen_fd = coc_fiber::listen_tcp(9999);
+    int listen_fd = coc_fiber::listen_tcp(9736);
     if (listen_fd < 0)
     {
         exit_with_err("listen failed");

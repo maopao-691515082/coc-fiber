@@ -4,8 +4,8 @@ LD_FLAGS = -pthread -lrt
 all:
 	mkdir -p output
 	cd output && g++ $(CC_FLAGS) -c ../src/*.cpp
-	cd output && ar q libcoc_fiber.a *.o
-	cd output && g++ $(CC_FLAGS) -o echo_svr ../test/echo_svr/*.cpp $(LD_FLAGS)
+	cd output && ar r libcoc_fiber.a *.o
+	cd output && g++ $(CC_FLAGS) -o echo_svr ../test/echo_svr/*.cpp libcoc_fiber.a $(LD_FLAGS)
 
 clean:
 	rm -rf output

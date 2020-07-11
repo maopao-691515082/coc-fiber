@@ -220,7 +220,7 @@ std::mutex *wait_expire(int64_t expire_at)
 
     Fiber *curr_fiber = get_curr_fiber();
     expire_queue[expire_at][curr_fiber->seq()] = curr_fiber;
-    curr_fiber.waiting_evs.expire_at = expire_at;
+    curr_fiber->waiting_evs.expire_at = expire_at;
 
     notify_main_sched_ev_fd();
 
@@ -236,7 +236,7 @@ std::mutex *wait_##_readable_or_writable(int fd, int64_t expire_at) {   \
         expire_queue_lock.lock();                                       \
         ret_mutex = &expire_queue_lock;                                 \
         expire_queue[expire_at][curr_fiber->seq()] = curr_fiber;        \
-        curr_fiber.waiting_evs.expire_at = expire_at;                   \
+        curr_fiber->waiting_evs.expire_at = expire_at;                  \
     }                                                                   \
     FdInfo &fd_info = fd_infos[fd];                                     \
     fd_info._r_or_w##_queue[curr_fiber->seq()] = curr_fiber;            \

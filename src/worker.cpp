@@ -68,7 +68,7 @@ void init_workers()
     }
 }
 
-void deliver_fiber_to_workers(std::list<Fiber *> fibers)
+void deliver_fiber_to_workers(const std::list<Fiber *> &fibers)
 {
     {
         std::lock_guard<std::mutex> fiber_queue_lock_guard(fiber_queue_lock);
