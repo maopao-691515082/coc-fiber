@@ -31,7 +31,7 @@ namespace coc_fiber
 {
 
 #define assert(_cond) do {                                                                          \
-    if (!(_cond)) {                                                                                   \
+    if (!(_cond)) {                                                                                 \
         std::cerr << "assert failed: [" __FILE__ "][" << __LINE__ << "] " << #_cond << std::endl;   \
         exit(1);                                                                                    \
     }                                                                                               \
