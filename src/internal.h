@@ -80,5 +80,12 @@ Fiber *get_curr_fiber();
 void switch_to_worker_sched();
 
 void reg_fiber(Fiber *fiber);
+void reg_fd(int fd);
+void unreg_fd(int fd);
+void notify_main_sched_ev_fd();
+std::mutex *get_fd_info_lock(int fd);
+std::mutex *wait_expire(int64_t expire_at);
+std::mutex *wait_readable(int fd, int64_t expire_at);
+std::mutex *wait_writable(int fd, int64_t expire_at);
 
 }

@@ -61,8 +61,8 @@ void clear_waiting_ev(Fiber *fiber)
     evs.waiting_fd_##_r_or_w = -1;                                      \
 } while (false)
 
-        CLEAR_FIBER_FROM_IO_WAITING_FIBERS(r);
-        CLEAR_FIBER_FROM_IO_WAITING_FIBERS(w);
+    CLEAR_FIBER_FROM_IO_WAITING_FIBERS(r);
+    CLEAR_FIBER_FROM_IO_WAITING_FIBERS(w);
 
 #undef CLEAR_FIBER_FROM_IO_WAITING_FIBERS
 }
@@ -91,6 +91,22 @@ void reg_fiber(Fiber *fiber)
     ready_fibers[fiber->seq()] = fiber;
 }
 
+void reg_fd(int fd)
+{
+    struct epoll_event ev;
+    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+    ev.data.fd = fd;
+    assert(epoll_ctl(ep_fd, EPOLL_CTL_ADD, fd, &ev) == 0);
+}
+
+void unreg_fd(int fd)
+{
+    //closing another fiber's IO-waiting fd is not supported now
+
+    struct epoll_event ev;
+    assert(epoll_ctl(ep_fd, EPOLL_CTL_DEL, fd, &ev) == 0);
+}
+
 void dispatch()
 {
     for (;;)
@@ -102,7 +118,7 @@ void dispatch()
                 std::list<Fiber *> fibers;
                 for (auto iter = ready_fibers.begin(); iter != ready_fibers.end(); ++ iter)
                 {
-                    clear_waiting_ev(iter->second);
+                    clear_waiting_ev(iter->second); //delayed from waking-up, still safe
                     fibers.push_back(iter->second);
                 }
                 ready_fibers.clear();
@@ -185,5 +201,52 @@ void dispatch()
         }
     }
 }
+
+void notify_main_sched_ev_fd()
+{
+    uint64_t count = 1;
+    assert(write(ev_fd, &count, sizeof(count)) != -1);
+}
+
+std::mutex *get_fd_info_lock(int fd)
+{
+    assert(fd >= 0);
+    return &fd_infos[fd].lock;
+}
+
+std::mutex *wait_expire(int64_t expire_at)
+{
+    expire_queue_lock.lock();
+
+    Fiber *curr_fiber = get_curr_fiber();
+    expire_queue[expire_at][curr_fiber->seq()] = curr_fiber;
+    curr_fiber.waiting_evs.expire_at = expire_at;
+
+    notify_main_sched_ev_fd();
+
+    return &expire_queue_lock;
+}
+
+#define DEF_WAIT_READABLE_OR_WRITABLE(_readable_or_writable, _r_or_w)   \
+std::mutex *wait_##_readable_or_writable(int fd, int64_t expire_at) {   \
+    assert(fd >= 0);                                                    \
+    std::mutex *ret_mutex = nullptr;                                    \
+    Fiber *curr_fiber = get_curr_fiber();                               \
+    if (expire_at >= 0) {                                               \
+        expire_queue_lock.lock();                                       \
+        ret_mutex = &expire_queue_lock;                                 \
+        expire_queue[expire_at][curr_fiber->seq()] = curr_fiber;        \
+        curr_fiber.waiting_evs.expire_at = expire_at;                   \
+    }                                                                   \
+    FdInfo &fd_info = fd_infos[fd];                                     \
+    fd_info._r_or_w##_queue[curr_fiber->seq()] = curr_fiber;            \
+    notify_main_sched_ev_fd();                                          \
+    return ret_mutex;                                                   \
+}
+
+DEF_WAIT_READABLE_OR_WRITABLE(readable, r)
+DEF_WAIT_READABLE_OR_WRITABLE(writable, w)
+
+#undef DEF_WAIT_READABLE_OR_WRITABLE
 
 }

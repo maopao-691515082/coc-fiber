@@ -20,12 +20,12 @@ static void exit_with_err(const std::string &err)
     exit(1);
 }
 
-static void dispatch_client(coc_fiber::Conn conn)
+static void dispatch_client(int conn_fd)
 {
     for (;;)
     {
         char buf[1024];
-        ssize_t ret = conn.read(buf, sizeof(buf));
+        ssize_t ret = coc_fiber::read_data(conn_fd, buf, sizeof(buf));
         if (ret < 0)
         {
             log_err("read from client error");
@@ -36,7 +36,7 @@ static void dispatch_client(coc_fiber::Conn conn)
             log("client ends");
             return;
         }
-        if (conn.write(buf, (size_t)ret) != 0)
+        if (coc_fiber::write_data(conn_fd, buf, (size_t)ret) != 0)
         {
             log_err("write to client error");
             return;
@@ -46,21 +46,23 @@ static void dispatch_client(coc_fiber::Conn conn)
 
 static void start_svr()
 {
-    auto listener = coc_fiber::ListenTCP(9999);
-    if (!listener.valid())
+    int listen_fd = coc_fiber::listen_tcp(9999);
+    if (listen_fd < 0)
     {
         exit_with_err("listen failed");
     }
     for (;;)
     {
-        auto conn = listener.accept();
-        if (!conn.valid())
+        int conn_fd = coc_fiber::accept_fd(listen_fd);
+        if (conn_fd < 0)
         {
             log_err("accept failed");
+            coc_fiber::sleep_ms(1);
+            continue;
         }
-        coc_fiber::create_fiber([conn] () {
-            dispatch_client(conn);
-            conn.close();
+        coc_fiber::create_fiber([conn_fd] () {
+            dispatch_client(conn_fd);
+            coc_fiber::close_fd(conn_fd);
         });
     }
 }

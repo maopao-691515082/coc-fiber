@@ -48,6 +48,7 @@ static void worker_thread_main(size_t idx)
         call_after_sched_back = do_nothing;
         assert(swapcontext(&thread_main_sched_ctx, &curr_fiber->ctx) == 0);
         call_after_sched_back();
+        call_after_sched_back = do_nothing;
         curr_fiber = nullptr;
 
         if (fiber->finished())
