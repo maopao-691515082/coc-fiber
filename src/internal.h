@@ -12,6 +12,7 @@
 #include <functional>
 #include <thread>
 #include <mutex>
+#include <iostream>
 
 #include <unistd.h>
 #include <signal.h>
@@ -29,13 +30,18 @@
 namespace coc_fiber
 {
 
-int64_t now_ms();
+#define assert(_cond) do {                                                                          \
+    if (!_cond) {                                                                                   \
+        std::cerr << "assert failed: [" __FILE__ "][" << __LINE__ << "] " << #_cond << std::endl;   \
+        exit(1);                                                                                    \
+    }                                                                                               \
+} while (false)
 
-void assert(bool cond);
+int64_t now_ms();
 
 struct WaitingEvents
 {
-    int64_t expire_at = 0;
+    int64_t expire_at = -1;
     int waiting_fd_r = -1, waiting_fd_w = -1;
 };
 
@@ -68,7 +74,7 @@ public:
 };
 
 void init_workers();
-void deliver_fiber_to_workers(Fiber *fiber);
+void deliver_fiber_to_workers(const std::list<Fiber *> &fibers);
 void set_call_after_sched_back(std::function<void ()> call);
 Fiber *get_curr_fiber();
 void switch_to_worker_sched();

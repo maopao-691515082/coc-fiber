@@ -11,12 +11,4 @@ int64_t now_ms()
     return (int64_t)now.tv_sec * 1000 + (int64_t)now.tv_usec / 1000;
 }
 
-void assert(bool cond)
-{
-    if (!cond)
-    {
-        abort();
-    }
-}
-
 }
