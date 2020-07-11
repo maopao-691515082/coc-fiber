@@ -14,7 +14,7 @@ static std::map<int64_t, Fibers> expire_queue;
 
 struct FdInfo
 {
-    std::mutex fd_info_lock;
+    std::mutex lock;
     Fibers r_queue, w_queue;
 };
 static FdInfo fd_infos[1024 * 1024];
@@ -44,7 +44,7 @@ void clear_waiting_ev(Fiber *fiber)
         std::lock_guard<std::mutex> expire_queue_lock_guard(expire_queue_lock);
 
         auto iter = expire_queue.find(evs.expire_at);
-        if (iter != expire_waiting_fibers.end())
+        if (iter != expire_queue.end())
         {
             iter->second.erase(fiber->seq());
         }
@@ -55,7 +55,7 @@ void clear_waiting_ev(Fiber *fiber)
     int fd = evs.waiting_fd_##_r_or_w;                                  \
     if (fd >= 0) {                                                      \
         FdInfo &fd_info = fd_infos[fd];                                 \
-        std::lock_guard<std::mutex> fd_info_lock_guard(fd_info_lock);   \
+        std::lock_guard<std::mutex> fd_info_lock_guard(fd_info.lock);   \
         fd_info._r_or_w##_queue.erase(fiber->seq());                    \
     }                                                                   \
     evs.waiting_fd_##_r_or_w = -1;                                      \
@@ -164,7 +164,7 @@ void dispatch()
                     FdInfo &fd_info = fd_infos[fd];
 
                     {
-                        std::lock_guard<std::mutex> fd_info_lock_guard(fd_info_lock);
+                        std::lock_guard<std::mutex> fd_info_lock_guard(fd_info.lock);
 
 #define WAKE_UP_BY_EVENT(_ev, _r_or_w) do {                             \
     if (ev.events & (EPOLL##_ev | EPOLLERR | EPOLLHUP)) {               \
