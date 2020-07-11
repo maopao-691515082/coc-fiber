@@ -30,7 +30,7 @@ Fiber::~Fiber()
     delete[] stk;
 }
 
-void Fiber::Start()
+void Fiber::start()
 {
     Fiber *curr_fiber = get_curr_fiber();
     curr_fiber->run();

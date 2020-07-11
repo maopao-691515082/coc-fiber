@@ -11,6 +11,7 @@ static int worker_event_fds[WORKER_COUNT];
 static std::mutex fiber_queue_lock;
 static std::list<Fiber *> fiber_queue;
 
+thread_local Fiber *curr_fiber;
 thread_local ucontext thread_main_sched_ctx;
 thread_local std::function<void ()> call_after_sched_back;
 
