@@ -9,6 +9,7 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
+#include <algorithm>
 
 #include <coc_fiber.h>
 

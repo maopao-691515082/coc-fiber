@@ -137,6 +137,24 @@ bool RedisConn::recv_args(std::vector<std::string> *args)
         return false;
     }
 
+    int64_t item_count;
+    if (!read_int(&item_count) || item_count < 1)
+    {
+        return false;
+    }
+    for (int64_t i = 0; i < item_count; ++ i)
+    {
+        std::string s;
+        if (!read_str(&s))
+        {
+            return false;
+        }
+        args->push_back(s);
+    }
+    std::string &s = args->at(0);
+    std::transform(s.begin(), s.end(), s.begin(), toupper);
+
+    return true;
 }
 
 bool RedisConn::send_rsp(const std::string &rsp)
