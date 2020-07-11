@@ -71,7 +71,7 @@ bool RedisConn::read_int(int64_t *n)
             return false;
         }
     }
-    if (read_fixed_char('\n'))
+    if (!read_fixed_char('\n'))
     {
         return false;
     }
@@ -116,7 +116,7 @@ bool RedisConn::read_str(std::string *s)
         recv_buf_len -= copy_len;
     }
 
-    return true;
+    return read_fixed_char('\r') && read_fixed_char('\n');
 }
 
 bool RedisConn::recv_args(std::vector<std::string> *args)
@@ -142,6 +142,7 @@ bool RedisConn::recv_args(std::vector<std::string> *args)
     {
         return false;
     }
+
     for (int64_t i = 0; i < item_count; ++ i)
     {
         std::string s;
@@ -151,6 +152,7 @@ bool RedisConn::recv_args(std::vector<std::string> *args)
         }
         args->push_back(s);
     }
+
     std::string &s = args->at(0);
     std::transform(s.begin(), s.end(), s.begin(), toupper);
 
