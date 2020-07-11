@@ -9,7 +9,7 @@ RedisConn::RedisConn(int fd) : conn_fd(fd)
 
 RedisConn::~RedisConn()
 {
-    coc_fiber::close(conn_fd);
+    coc_fiber::close_fd(conn_fd);
 }
 
 bool RedisConn::fill_recv_buf()
@@ -20,7 +20,7 @@ bool RedisConn::fill_recv_buf()
     }
 
     recv_buf_start = 0;
-    ssize_t ret = coc_fiber::read(conn_fd, recv_buf, sizeof(recv_buf));
+    ssize_t ret = coc_fiber::read_data(conn_fd, recv_buf, sizeof(recv_buf));
     if (ret < 0)
     {
         return false;
@@ -60,7 +60,7 @@ bool RedisConn::read_int(int64_t *n)
                 ok = true;
                 break;
             }
-            s.append(ch);
+            s.append(&ch, 1);
         }
         if (ok)
         {
@@ -104,14 +104,14 @@ bool RedisConn::read_str(std::string *s)
     }
     size_t s_len = (size_t)n;
 
-    while (s.size() < s_len)
+    while (s->size() < s_len)
     {
         if (!fill_recv_buf() || recv_buf_len == 0)
         {
             return false;
         }
-        size_t copy_len = std::min(recv_buf_len, s_len - s.size());
-        s.append(recv_buf + recv_buf_start, copy_len);
+        size_t copy_len = std::min(recv_buf_len, s_len - s->size());
+        s->append(recv_buf + recv_buf_start, copy_len);
         recv_buf_start += copy_len;
         recv_buf_len -= copy_len;
     }
@@ -141,7 +141,7 @@ bool RedisConn::recv_args(std::vector<std::string> *args)
 
 bool RedisConn::send_rsp(const std::string &rsp)
 {
-    return coc_fiber::write(conn_fd, rsp.data(), rsp.size(), 1000) == 0;
+    return coc_fiber::write_data(conn_fd, rsp.data(), rsp.size(), 1000) == 0;
 }
 
 }

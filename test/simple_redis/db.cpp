@@ -42,7 +42,7 @@ void do_set(const std::string &key, const std::string &value)
     }
     else
     {
-        result.first.second = value;
+        result.first->second = value;
     }
 }
 
@@ -57,7 +57,7 @@ bool do_get(const std::string &key, std::string *value)
         return false;
     }
 
-    *value = iter.second;
+    *value = iter->second;
     return true;
 }
 

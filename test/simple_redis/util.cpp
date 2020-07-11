@@ -3,7 +3,7 @@
 namespace simple_redis
 {
 
-void log(const char *fmt, ...);
+void log(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);

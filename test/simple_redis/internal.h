@@ -6,7 +6,9 @@
 
 #include <map>
 #include <string>
-#include <iostream>
+#include <vector>
+#include <mutex>
+#include <atomic>
 
 #include <coc_fiber.h>
 
