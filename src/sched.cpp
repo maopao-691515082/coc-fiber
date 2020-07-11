@@ -93,6 +93,9 @@ void reg_fiber(Fiber *fiber)
 
 void reg_fd(int fd)
 {
+    int flags = 1;
+    assert(ioctl(fd, FIONBIO, &flags) == 0);
+
     struct epoll_event ev;
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
     ev.data.fd = fd;
