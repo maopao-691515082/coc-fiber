@@ -4,9 +4,9 @@
 namespace coc_fiber
 {
 
-static const size_t WORKER_COUNT = 50;
+static const size_t WORKER_COUNT = 8;
 
-static int worker_event_fds[WORKER_COUNT];
+static int worker_event_fd;
 
 static std::mutex fiber_queue_lock;
 static std::list<Fiber *> fiber_queue;
@@ -33,7 +33,7 @@ static Fiber *get_one_fiber()
 
 static void worker_thread_main(size_t idx)
 {
-    int ev_fd = worker_event_fds[idx];
+    int ev_fd = worker_event_fd;
     for (;;)
     {
         Fiber *fiber = get_one_fiber();
@@ -60,10 +60,10 @@ static void worker_thread_main(size_t idx)
 
 void init_workers()
 {
+    worker_event_fd = eventfd(0, EFD_SEMAPHORE);
+    assert(worker_event_fd != -1);
     for (size_t i = 0; i < WORKER_COUNT; ++ i)
     {
-        worker_event_fds[i] = eventfd(0, 0);
-        assert(worker_event_fds[i] != -1);
         std::thread(worker_thread_main, i).detach();
     }
 }
@@ -77,11 +77,8 @@ void deliver_fiber_to_workers(const std::list<Fiber *> &fibers)
             fiber_queue.push_back(*iter);
         }
     }
-    for (size_t i = 0; i < WORKER_COUNT; ++ i)
-    {
-        uint64_t count = 1;
-        assert(write(worker_event_fds[i], &count, sizeof(count)) != -1);
-    }
+    uint64_t count = 1;
+    assert(write(worker_event_fd, &count, sizeof(count)) != -1);
 }
 
 void set_call_after_sched_back(std::function<void ()> call)
