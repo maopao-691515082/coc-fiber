@@ -164,6 +164,7 @@ int write_data(int fd, const char *buf, size_t sz, int64_t timeout_ms)
             fd_info_lock->unlock();
         }
     }
+    return 0;
 }
 
 void close_fd(int fd)
